@@ -12,11 +12,11 @@ class EllipseRenderer: GLSurfaceView.Renderer {
     private val viewMatrix = FloatArray(16)//view matrix
     private val mVMatrix = FloatArray(16)//model view matrix
     private val modelMatrix = FloatArray(16)//model  matrix
-    private lateinit var ellipse: Ellipse
+    private lateinit var pyramid: Pyramid
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         GLES32.glClearColor(0f, 0f, 0f, 1f)
-        ellipse = Ellipse()
+        pyramid = Pyramid()
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -29,7 +29,7 @@ class EllipseRenderer: GLSurfaceView.Renderer {
     override fun onDrawFrame(gl: GL10?) {
         drawBackground()
         setupMatrix()
-        ellipse.draw(mVPMatrix)
+        pyramid.draw(mVPMatrix)
     }
 
     private fun setupMatrix() {
