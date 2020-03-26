@@ -14,11 +14,11 @@ class EllipseRenderer: GLSurfaceView.Renderer {
     private val modelMatrix = FloatArray(16)//model  matrix
     private val rotateMatrixZ = FloatArray(16)//rotate  matrix
     private val rotateMatrixY = FloatArray(16)//rotate  matrix
-    private lateinit var cube: Cube
+    private lateinit var pentagonPrism: PentagonPrism
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         GLES32.glClearColor(0f, 0f, 0f, 1f)
-        cube = Cube()
+        pentagonPrism = PentagonPrism()
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -31,7 +31,7 @@ class EllipseRenderer: GLSurfaceView.Renderer {
     override fun onDrawFrame(gl: GL10?) {
         drawBackground()
         setupMatrix()
-        cube.draw(mVPMatrix)
+        pentagonPrism.draw(mVPMatrix)
     }
 
     private fun setupMatrix() {
