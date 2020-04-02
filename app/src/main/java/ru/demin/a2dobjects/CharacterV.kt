@@ -8,7 +8,7 @@ import android.opengl.GLES20
 import java.nio.IntBuffer
 
 
-class PentagonPrism {
+class CharacterV {
     private val vertexShaderCode = "attribute vec3 aVertexPosition;" +
             "attribute vec4 aVertexColor;" +
             "uniform mat4 uMVPMatrix;" +
@@ -112,17 +112,19 @@ class PentagonPrism {
     private fun createVertex(): FloatArray {
         val vertex = listOf(
             //front face
-            0f, 1f, 1f,
-            1f, 0f, 1f,
-            0.5f, -1f, 1f,
-            -0.5f, -1f, 1f,
-            -1f, -0f, 1f,
+            -2f, 2f, 1f,
+            -1f, 2f, 1f,
+            0f, 0f, 1f,
+            1f, 2f, 1f,
+            2f, 2f, 1f,
+            0f, -2f, 1f,
             //back face
-            0f, 1f, -1f,
-            1f, 0f, -1f,
-            0.5f, -1f, -1f,
-            -0.5f, -1f, -1f,
-            -1f, -0f, -1f
+            -2f, 2f, -1f,
+            -1f, 2f, -1f,
+            0f, 0f, -1f,
+            1f, 2f, -1f,
+            2f, 2f, -1f,
+            0f, -2f, -1f
         )
         return vertex.toFloatArray()
     }
@@ -130,30 +132,33 @@ class PentagonPrism {
     private fun createVertexColor(): FloatArray {
         val vertex = listOf(
             //front face
-            1f, 0f, 0f, 1f,
-            1f, 0f, 0f, 1f,
-            1f, 0f, 0f, 1f,
-            1f, 0f, 0f, 1f,
-            1f, 0f, 0f, 1f,
+            0f, 0f, 1f, 1f,
+            0f, 0f, 1f, 1f,
+            0f, 0f, 1f, 1f,
+            0f, 0f, 1f, 1f,
+            0f, 0f, 1f, 1f,
+            0f, 0f, 1f, 1f,
             //back face
-            0f, 1f, 0f, 1f,
-            0f, 1f, 0f, 1f,
-            0f, 1f, 0f, 1f,
-            0f, 1f, 0f, 1f,
-            0f, 1f, 0f, 1f
+            0f, 1f, 1f, 1f,
+            0f, 1f, 1f, 1f,
+            0f, 1f, 1f, 1f,
+            0f, 1f, 1f, 1f,
+            0f, 1f, 1f, 1f,
+            0f, 1f, 1f, 1f
         )
         return vertex.toFloatArray()
     }
 
     private fun createIndexArray(): IntArray {
         val index = listOf(
-            0, 1, 2, 0, 2, 4, 2, 4, 3,
-            5, 6, 7, 5, 7, 9, 7, 9, 8,
-            0,1,5,1,5,6,
-            1,2,6,2,6,7,
-            2,3,7,3,7,8,
-            3,4,8,4,8,9,
-            4,0,9,0,9,5
+            0, 1, 2, 0, 2, 5, 2, 3, 4, 2, 4, 5,//front face
+            6, 7, 8, 6, 8, 11, 8, 9, 10, 8, 10, 11,//back face
+            0,1,6,1,6,7,//top left
+            3,4,9,4,9,10,//top right
+            1,2,7,2,7,8,//left inner
+            2,3,8,3,8,9,//right inner
+            0,5,6,5,6,11,//left outer
+            5,4,11,4,11,10//right outer
         )
         return index.toIntArray()
     }

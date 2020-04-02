@@ -12,13 +12,13 @@ class EllipseRenderer: GLSurfaceView.Renderer {
     private val viewMatrix = FloatArray(16)//view matrix
     private val mVMatrix = FloatArray(16)//model view matrix
     private val modelMatrix = FloatArray(16)//model  matrix
-    private val rotateMatrixZ = FloatArray(16)//rotate  matrix
+    private val rotateMatrixX = FloatArray(16)//rotate  matrix
     private val rotateMatrixY = FloatArray(16)//rotate  matrix
-    private lateinit var pentagonPrism: PentagonPrism
+    private lateinit var characterV: CharacterV
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         GLES32.glClearColor(0f, 0f, 0f, 1f)
-        pentagonPrism = PentagonPrism()
+        characterV = CharacterV()
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -31,7 +31,7 @@ class EllipseRenderer: GLSurfaceView.Renderer {
     override fun onDrawFrame(gl: GL10?) {
         drawBackground()
         setupMatrix()
-        pentagonPrism.draw(mVPMatrix)
+        characterV.draw(mVPMatrix)
     }
 
     private fun setupMatrix() {
@@ -49,9 +49,9 @@ class EllipseRenderer: GLSurfaceView.Renderer {
 
 
         //rotation
-        Matrix.setRotateM(rotateMatrixZ, 0, 30f, 0f, 0f, 1f)
+        Matrix.setRotateM(rotateMatrixX, 0, 30f, 1f, 0f, 0f)
         Matrix.setRotateM(rotateMatrixY, 0, 30f, 0f, 1f, 0f)
-        Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, rotateMatrixZ, 0)
+        Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, rotateMatrixX, 0)
         Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, rotateMatrixY, 0)
 
         // Calculate the projection and view transformation
