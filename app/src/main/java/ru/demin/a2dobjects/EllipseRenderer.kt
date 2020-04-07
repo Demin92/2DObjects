@@ -3,10 +3,13 @@ package ru.demin.a2dobjects
 import android.opengl.GLES32
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
+import android.util.Log
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-class EllipseRenderer: GLSurfaceView.Renderer {
+class EllipseRenderer : GLSurfaceView.Renderer {
+    val rotation = Rotation(0f, 0f, 0f)
+
     private val mVPMatrix = FloatArray(16)//model view projection matrix
     private val projectionMatrix = FloatArray(16)//projection mastrix
     private val viewMatrix = FloatArray(16)//view matrix
@@ -14,11 +17,12 @@ class EllipseRenderer: GLSurfaceView.Renderer {
     private val modelMatrix = FloatArray(16)//model  matrix
     private val rotateMatrixX = FloatArray(16)//rotate  matrix
     private val rotateMatrixY = FloatArray(16)//rotate  matrix
-    private lateinit var halfCone: HalfCone
+    private val rotateMatrixZ = FloatArray(16)//rotate  matrix
+    private lateinit var characterV: CharacterV
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         GLES32.glClearColor(0f, 0f, 0f, 1f)
-        halfCone = HalfCone()
+        characterV = CharacterV()
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -31,7 +35,7 @@ class EllipseRenderer: GLSurfaceView.Renderer {
     override fun onDrawFrame(gl: GL10?) {
         drawBackground()
         setupMatrix()
-        halfCone.draw(mVPMatrix)
+        characterV.draw(mVPMatrix)
     }
 
     private fun setupMatrix() {
@@ -46,13 +50,14 @@ class EllipseRenderer: GLSurfaceView.Renderer {
             0f, 1f, 0.0f
         )//head is down (set to (0,1,0) to look from the top)
         Matrix.translateM(modelMatrix, 0, 0.0f, 0.0f, -5f)//move backward for 5 units
-
-
+        
         //rotation
-        Matrix.setRotateM(rotateMatrixX, 0, -60f, 1f, 0f, 0f)
-        Matrix.setRotateM(rotateMatrixY, 0, 30f, 0f, 0f, 1f)
+        Matrix.setRotateM(rotateMatrixX, 0, rotation.xAngle, 1f, 0f, 0f)
+        Matrix.setRotateM(rotateMatrixY, 0, rotation.yAngle, 0f, 1f, 0f)
+        Matrix.setRotateM(rotateMatrixZ, 0, rotation.zAngle, 0f, 0f, 1f)
         Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, rotateMatrixX, 0)
         Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, rotateMatrixY, 0)
+        Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, rotateMatrixZ, 0)
 
         // Calculate the projection and view transformation
         //calculate the model view matrix
@@ -65,5 +70,30 @@ class EllipseRenderer: GLSurfaceView.Renderer {
         GLES32.glClearDepthf(1.0f)//set up the depth buffer
         GLES32.glEnable(GLES32.GL_DEPTH_TEST)//enable depth test (so, it will not look through the surfaces)
         GLES32.glDepthFunc(GLES32.GL_LEQUAL)//indicate what type of depth test
+    }
+
+    data class Rotation(
+        var xAngle: Float,
+        var yAngle: Float,
+        var zAngle: Float
+    ) {
+        private var currentAxis = 0
+
+        fun randStep() {
+            val rand = Math.random().toFloat() * RANDOM_DISTANCE
+            val axis = Math.random().toFloat() * CHANGE_AXIS_PROBABILITY
+            if (axis > CHANGE_AXIS_PROBABILITY - 1) currentAxis++
+
+            when (currentAxis % 3) {
+                0 -> xAngle += rand
+                1 -> yAngle += rand
+                2 -> zAngle += rand
+            }
+        }
+
+        companion object {
+            private const val RANDOM_DISTANCE = 5f
+            private const val CHANGE_AXIS_PROBABILITY = 50
+        }
     }
 }
