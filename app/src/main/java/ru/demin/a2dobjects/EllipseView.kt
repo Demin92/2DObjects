@@ -13,6 +13,7 @@ class EllipseView(
     init {
         setEGLContextClientVersion(2)
         setRenderer(renderer)
+        renderMode = RENDERMODE_WHEN_DIRTY
         runRotation()
     }
 
@@ -21,7 +22,7 @@ class EllipseView(
         val task = object : TimerTask() {
             override fun run() {
                 renderer.rotation.randStep()
-                this@EllipseView.invalidate()
+                this@EllipseView.requestRender()
             }
         }
         timer.scheduleAtFixedRate(task, 100, 16)
