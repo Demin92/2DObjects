@@ -3,7 +3,6 @@ package ru.demin.a2dobjects
 import android.opengl.GLES32
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
-import android.util.Log
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -18,11 +17,11 @@ class EllipseRenderer : GLSurfaceView.Renderer {
     private val rotateMatrixX = FloatArray(16)//rotate  matrix
     private val rotateMatrixY = FloatArray(16)//rotate  matrix
     private val rotateMatrixZ = FloatArray(16)//rotate  matrix
-    private lateinit var characterV: CharacterV
+    private lateinit var twoCharacters: TwoCharacters
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         GLES32.glClearColor(0f, 0f, 0f, 1f)
-        characterV = CharacterV()
+        twoCharacters = TwoCharacters()
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -35,7 +34,7 @@ class EllipseRenderer : GLSurfaceView.Renderer {
     override fun onDrawFrame(gl: GL10?) {
         drawBackground()
         setupMatrix()
-        characterV.draw(mVPMatrix)
+        twoCharacters.draw(mVPMatrix)
     }
 
     private fun setupMatrix() {
