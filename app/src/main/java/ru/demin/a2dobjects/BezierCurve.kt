@@ -5,10 +5,12 @@ import android.util.Log
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import android.opengl.GLES20
+import java.lang.Math.pow
 import java.nio.IntBuffer
+import kotlin.math.pow
 
 
-class TwoCharacters {
+class BezierCurve {
     private val vertexShaderCode = "attribute vec3 aVertexPosition;" +
             "attribute vec4 aVertexColor;" +
             "uniform mat4 uMVPMatrix;" +
@@ -107,85 +109,87 @@ class TwoCharacters {
             colorBuffer
         )
         GLES32.glDrawElements(GLES32.GL_TRIANGLES, indexes.size, GLES32.GL_UNSIGNED_INT, indexBuffer)
+//        GLES32.glDrawElements(GLES32.GL_LINES, indexes.size, GLES32.GL_UNSIGNED_INT, indexBuffer)
+//        GLES32.glDrawArrays(GLES32.GL_LINES, 0, vertex.size / COORDS_PER_VERTEX)
+
     }
 
     private fun createVertex(): FloatArray {
-        return mutableListOf<Float>().apply {
-            addAll(createVertex(-2f))
-            addAll(createVertex(2f))
-        }.toFloatArray()
+        val vertex = mutableListOf<Float>()
+
+        val innerControlPoint = listOf(
+            0f, 1f,
+            0.8f, 1.66f,
+            0.8f, 2.33f,
+            0f, 3f
+        )
+        val innerCurve = createBezierCurve(innerControlPoint,1f)
+
+        val outerControlPoints = listOf(
+            1f, 0f,
+            1.66f, 1f,
+            1.66f, 3f,
+            1f, 4f
+        )
+        val outerCurve = createBezierCurve(outerControlPoints,1f)
+
+        vertex.run {
+            addAll(innerCurve)
+            addAll(outerCurve)
+        }
+        return vertex.toFloatArray()
     }
 
-    private fun createVertex(xDistance: Float): List<Float> {
-        return listOf(
-            //front face
-            -2f, 2f, 1f,
-            -1f, 2f, 1f,
-            0f, 0f, 1f,
-            1f, 2f, 1f,
-            2f, 2f, 1f,
-            0f, -2f, 1f,
-            //back face
-            -2f, 2f, -1f,
-            -1f, 2f, -1f,
-            0f, 0f, -1f,
-            1f, 2f, -1f,
-            2f, 2f, -1f,
-            0f, -2f, -1f
-        ).mapIndexed { index, value -> if (index % COORDS_PER_VERTEX == 0) value * SCALE + xDistance else value * SCALE }
+    private fun createBezierCurve(controlPoints: List<Float>, z: Float): List<Float> {
+        val points = mutableListOf<Float>()
+        val stepSize = 1.0 / BEZIER_CURVE_STEPS_COUNT
+        var centroidX = 0f
+        var centroidY = 0f
+        controlPoints.forEachIndexed { index, value ->
+            if (index % 2 == 0) centroidX += value else centroidY += value
+        }
+
+        for (t in 0..BEZIER_CURVE_STEPS_COUNT) {
+            val cur = t * stepSize
+
+            val x = controlPoints[0] * (1 - cur).pow(3.0) + controlPoints[2] * 3 * cur * (1 - cur).pow(2.0) +
+                        controlPoints[4] * 3 * cur * cur * (1 - cur) + controlPoints[6] * cur.pow(3.0)
+
+            val y = controlPoints[1] * (1 - cur).pow(3.0) + controlPoints[3] * 3 * cur * (1 - cur).pow(2.0) +
+                        controlPoints[5] * 3 * cur * cur * (1 - cur) + controlPoints[7] * cur.pow(3.0)
+
+            points.add(x.toFloat())
+            points.add(y.toFloat())
+            points.add(z)
+        }
+        return points
     }
 
     private fun createVertexColor(): FloatArray {
-        val colors = mutableListOf<Float>().apply {
-            addAll(createColors())
-            addAll(createColors())
+        val vertex = mutableListOf<Float>()
+        for (i in 0..BEZIER_CURVE_STEPS_COUNT) {
+            vertex.addAll(listOf(0f, 0f, 1f, 1f))
         }
-        return colors.toFloatArray()
-    }
-
-    private fun createColors(): List<Float> {
-        return listOf(
-            //front face
-            0f, 0f, 1f, 1f,
-            0f, 0f, 1f, 1f,
-            0f, 0f, 1f, 1f,
-            0f, 0f, 1f, 1f,
-            0f, 0f, 1f, 1f,
-            0f, 0f, 1f, 1f,
-            //back face
-            0f, 1f, 1f, 1f,
-            0f, 1f, 1f, 1f,
-            0f, 1f, 1f, 1f,
-            0f, 1f, 1f, 1f,
-            0f, 1f, 1f, 1f,
-            0f, 1f, 1f, 1f
-        )
+        for (i in 0..BEZIER_CURVE_STEPS_COUNT) {
+            vertex.addAll(listOf(0f, 1f, 1f, 1f))
+        }
+        return vertex.toFloatArray()
     }
 
     private fun createIndexArray(): IntArray {
-        return mutableListOf<Int>().apply {
-            addAll(createIndexArray(0))
-            addAll(createIndexArray(12))
-        }.toIntArray()
-    }
-
-    private fun createIndexArray(shift: Int): List<Int> {
-        return listOf(
-            0, 1, 2, 0, 2, 5, 2, 3, 4, 2, 4, 5,//front face
-            6, 7, 8, 6, 8, 11, 8, 9, 10, 8, 10, 11,//back face
-            0, 1, 6, 1, 6, 7,//top left
-            3, 4, 9, 4, 9, 10,//top right
-            1, 2, 7, 2, 7, 8,//left inner
-            2, 3, 8, 3, 8, 9,//right inner
-            0, 5, 6, 5, 6, 11,//left outer
-            5, 4, 11, 4, 11, 10//right outer
-        ).map { it + shift }
+        val index = mutableListOf<Int>()
+        val count = BEZIER_CURVE_STEPS_COUNT + 1
+        for (i in 0 until BEZIER_CURVE_STEPS_COUNT) {
+            index.addAll(listOf(i, i + count, i + count + 1))
+            index.addAll(listOf(i, i + count + 1, i + 1))
+        }
+        return index.toIntArray()
     }
 
     companion object {
         private const val COORDS_PER_VERTEX = 3
         private const val COLOR_PER_VERTEX = 4
         private const val BYTES_PER_FLOAT = 4
-        private const val SCALE = 0.25f
+        private const val BEZIER_CURVE_STEPS_COUNT = 100
     }
 }

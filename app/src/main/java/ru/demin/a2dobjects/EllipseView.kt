@@ -14,7 +14,7 @@ class EllipseView(
         setEGLContextClientVersion(2)
         setRenderer(renderer)
         renderMode = RENDERMODE_WHEN_DIRTY
-        runRotation()
+//        runRotation()
     }
 
     private fun runRotation() {
