@@ -15,17 +15,24 @@ class Sphere {
     private val vertexShaderCode = "attribute vec3 aVertexPosition;" +
             "attribute vec4 aVertexColor;" +
             "uniform mat4 uMVPMatrix;" +
+            "uniform vec3 uPointLightLocation;" +
             "varying vec4 vColor;" +
+            "varying float vPointLightWeighting;" +
             "void main() {" +
             "vColor = aVertexColor;" +
             "gl_Position = uMVPMatrix *vec4(aVertexPosition,1.0);" +
+            "float distFromLight = distance(gl_Position.xyz, uPointLightLocation);" +
+            "vPointLightWeighting = 20.0/(distFromLight * distFromLight);" +
             "}"
     private val fragmentShaderCode =
         "precision mediump float;" +
                 "varying vec4 vColor;" +
+                "varying float vPointLightWeighting;" +
                 "void main() {" +
-                "gl_FragColor = vColor;" +
+                "gl_FragColor = vec4(vColor.xyz * vPointLightWeighting, 1);" +
                 "}"
+
+    private var lightLocation = listOf(4f, 4f, 0f).toFloatArray()
 
     private val vertex = createVertex()
     private val vertexBuffer = ByteBuffer.allocateDirect(vertex.size * BYTES_PER_FLOAT).apply {
@@ -55,6 +62,7 @@ class Sphere {
     private val positionHandle: Int
     private val colorHandle: Int
     private val mVPMatrixHandle: Int
+    private val pointLightLocationHandle: Int
 
     init {
         val program = createProgram()
@@ -63,6 +71,7 @@ class Sphere {
         colorHandle = GLES32.glGetAttribLocation(program, "aVertexColor")
         GLES32.glEnableVertexAttribArray(colorHandle)
         mVPMatrixHandle = GLES32.glGetUniformLocation(program, "uMVPMatrix")
+        pointLightLocationHandle = GLES32.glGetUniformLocation(program, "uPointLightLocation")
     }
 
     private fun createProgram(): Int {
@@ -93,6 +102,8 @@ class Sphere {
 
     fun draw(mvpMatrix: FloatArray) {
         GLES32.glUniformMatrix4fv(mVPMatrixHandle, 1, false, mvpMatrix, 0)
+        GLES32.glUniform3fv(pointLightLocationHandle, 1, lightLocation, 0)
+
         GLES32.glVertexAttribPointer(
             positionHandle,
             COORDS_PER_VERTEX,
@@ -109,7 +120,7 @@ class Sphere {
             colorStride,
             colorBuffer
         )
-        GLES32.glDrawElements(GLES32.GL_LINES, indexes.size, GLES32.GL_UNSIGNED_INT, indexBuffer)
+        GLES32.glDrawElements(GLES32.GL_TRIANGLES, indexes.size, GLES32.GL_UNSIGNED_INT, indexBuffer)
     }
 
     private fun createVertex(): FloatArray {
@@ -127,20 +138,21 @@ class Sphere {
     }
 
     private fun createVertexColor(): FloatArray {
-        val vertex = mutableListOf<Float>()
+        val color = mutableListOf<Float>()
         for (lat in 0..LATITUDE_COUNT) {
             for (lon in 0..LONGITUDE_COUNT) {
-                vertex.addAll(
+                color.addAll(
                     listOf(
-                        lat * 1f / LATITUDE_COUNT,
-                        (LATITUDE_COUNT - lat) * 1f / LATITUDE_COUNT,
+                        1f ,0f,
+//                        lat * 1f / LATITUDE_COUNT,
+//                        (LATITUDE_COUNT - lat) * 1f / LATITUDE_COUNT,
                         0f,
                         1f
                     )
                 )
             }
         }
-        return vertex.toFloatArray()
+        return color.toFloatArray()
     }
 
     private fun createIndexArray(): IntArray {

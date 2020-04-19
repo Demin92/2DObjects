@@ -17,11 +17,11 @@ class EllipseRenderer : GLSurfaceView.Renderer {
     private val rotateMatrixX = FloatArray(16)//rotate  matrix
     private val rotateMatrixY = FloatArray(16)//rotate  matrix
     private val rotateMatrixZ = FloatArray(16)//rotate  matrix
-    private lateinit var bezierCurve: BezierCurve
+    private lateinit var sphere: Sphere
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         GLES32.glClearColor(0f, 0f, 0f, 1f)
-        bezierCurve = BezierCurve()
+        sphere = Sphere()
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -34,7 +34,7 @@ class EllipseRenderer : GLSurfaceView.Renderer {
     override fun onDrawFrame(gl: GL10?) {
         drawBackground()
         setupMatrix()
-        bezierCurve.draw(mVPMatrix)
+        sphere.draw(mVPMatrix)
     }
 
     private fun setupMatrix() {
