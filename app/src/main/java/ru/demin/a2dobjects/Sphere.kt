@@ -22,7 +22,7 @@ class Sphere {
             "vColor = aVertexColor;" +
             "gl_Position = uMVPMatrix *vec4(aVertexPosition,1.0);" +
             "float distFromLight = distance(gl_Position.xyz, uPointLightLocation);" +
-            "vPointLightWeighting = 20.0/(distFromLight * distFromLight);" +
+            "vPointLightWeighting = 10.0/(distFromLight * distFromLight);" +
             "}"
     private val fragmentShaderCode =
         "precision mediump float;" +
@@ -63,9 +63,10 @@ class Sphere {
     private val colorHandle: Int
     private val mVPMatrixHandle: Int
     private val pointLightLocationHandle: Int
+    private val program: Int
 
     init {
-        val program = createProgram()
+        program = createProgram()
         positionHandle = GLES32.glGetAttribLocation(program, "aVertexPosition")
         GLES32.glEnableVertexAttribArray(positionHandle)
         colorHandle = GLES32.glGetAttribLocation(program, "aVertexColor")
@@ -101,6 +102,7 @@ class Sphere {
     }
 
     fun draw(mvpMatrix: FloatArray) {
+        GLES32.glUseProgram(program)
         GLES32.glUniformMatrix4fv(mVPMatrixHandle, 1, false, mvpMatrix, 0)
         GLES32.glUniform3fv(pointLightLocationHandle, 1, lightLocation, 0)
 
@@ -120,7 +122,7 @@ class Sphere {
             colorStride,
             colorBuffer
         )
-        GLES32.glDrawElements(GLES32.GL_TRIANGLES, indexes.size, GLES32.GL_UNSIGNED_INT, indexBuffer)
+        GLES32.glDrawElements(GLES32.GL_LINES, indexes.size, GLES32.GL_UNSIGNED_INT, indexBuffer)
     }
 
     private fun createVertex(): FloatArray {

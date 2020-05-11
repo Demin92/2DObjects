@@ -52,9 +52,10 @@ class CharacterV {
     private val positionHandle: Int
     private val colorHandle: Int
     private val mVPMatrixHandle: Int
+    private val program: Int
 
     init {
-        val program = createProgram()
+        program = createProgram()
         positionHandle = GLES32.glGetAttribLocation(program, "aVertexPosition")
         GLES32.glEnableVertexAttribArray(positionHandle)
         colorHandle = GLES32.glGetAttribLocation(program, "aVertexColor")
@@ -89,6 +90,7 @@ class CharacterV {
     }
 
     fun draw(mvpMatrix: FloatArray) {
+        GLES32.glUseProgram(program)
         GLES32.glUniformMatrix4fv(mVPMatrixHandle, 1, false, mvpMatrix, 0)
         GLES32.glVertexAttribPointer(
             positionHandle,

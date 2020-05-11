@@ -7,8 +7,8 @@ import java.nio.ByteOrder
 import android.opengl.GLES20
 import java.lang.Math.pow
 import java.nio.IntBuffer
+import java.util.Collections.addAll
 import kotlin.math.pow
-
 
 class BezierCurve {
     private val vertexShaderCode = "attribute vec3 aVertexPosition;" +
@@ -34,7 +34,7 @@ class BezierCurve {
         position(0)
     }
 
-    private val vertexColor = createVertexColor()
+    private val vertexColor = createVertexColor(vertex.size / COORDS_PER_VERTEX)
     private val colorBuffer = ByteBuffer.allocateDirect(vertexColor.size * BYTES_PER_FLOAT).apply {
         order(ByteOrder.nativeOrder())
     }.asFloatBuffer().apply {
@@ -42,7 +42,7 @@ class BezierCurve {
         position(0)
     }
 
-    private val indexes = createIndexArray()
+    private val indexes = createIndexArray(vertex.size / COORDS_PER_VERTEX)
     private val indexBuffer = IntBuffer.allocate(indexes.size).apply {
         put(indexes)
         position(0)
@@ -116,6 +116,15 @@ class BezierCurve {
 
     private fun createVertex(): FloatArray {
         val vertex = mutableListOf<Float>()
+        vertex.apply {
+            addAll(createVertex(1f))
+            addAll(createVertex(-1f))
+        }
+        return vertex.toFloatArray()
+    }
+
+    private fun createVertex(z: Float): List<Float> {
+        val vertex = mutableListOf<Float>()
 
         val innerControlPoint = listOf(
             0f, 1f,
@@ -123,7 +132,7 @@ class BezierCurve {
             0.8f, 2.33f,
             0f, 3f
         )
-        val innerCurve = createBezierCurve(innerControlPoint,1f)
+        val innerCurve = createBezierCurve(innerControlPoint, z)
 
         val outerControlPoints = listOf(
             1f, 0f,
@@ -131,13 +140,21 @@ class BezierCurve {
             1.66f, 3f,
             1f, 4f
         )
-        val outerCurve = createBezierCurve(outerControlPoints,1f)
+        val outerCurve = createBezierCurve(outerControlPoints, z)
 
         vertex.run {
-            addAll(innerCurve)
+            addAll(
+                listOf(
+                    0f, 0f, z,
+                    0f, -2f, z,
+                    -1f, -2f, z,
+                    -1f, 4f, z
+                )
+            )
             addAll(outerCurve)
+            addAll(innerCurve)
         }
-        return vertex.toFloatArray()
+        return vertex
     }
 
     private fun createBezierCurve(controlPoints: List<Float>, z: Float): List<Float> {
@@ -153,10 +170,10 @@ class BezierCurve {
             val cur = t * stepSize
 
             val x = controlPoints[0] * (1 - cur).pow(3.0) + controlPoints[2] * 3 * cur * (1 - cur).pow(2.0) +
-                        controlPoints[4] * 3 * cur * cur * (1 - cur) + controlPoints[6] * cur.pow(3.0)
+                    controlPoints[4] * 3 * cur * cur * (1 - cur) + controlPoints[6] * cur.pow(3.0)
 
             val y = controlPoints[1] * (1 - cur).pow(3.0) + controlPoints[3] * 3 * cur * (1 - cur).pow(2.0) +
-                        controlPoints[5] * 3 * cur * cur * (1 - cur) + controlPoints[7] * cur.pow(3.0)
+                    controlPoints[5] * 3 * cur * cur * (1 - cur) + controlPoints[7] * cur.pow(3.0)
 
             points.add(x.toFloat())
             points.add(y.toFloat())
@@ -165,25 +182,68 @@ class BezierCurve {
         return points
     }
 
-    private fun createVertexColor(): FloatArray {
+    private fun createVertexColor(vertexSize: Int): FloatArray {
         val vertex = mutableListOf<Float>()
-        for (i in 0..BEZIER_CURVE_STEPS_COUNT) {
+        for (i in 0 until vertexSize / 2) {
             vertex.addAll(listOf(0f, 0f, 1f, 1f))
         }
-        for (i in 0..BEZIER_CURVE_STEPS_COUNT) {
+        for (i in 0 until vertexSize / 2) {
             vertex.addAll(listOf(0f, 1f, 1f, 1f))
         }
         return vertex.toFloatArray()
     }
 
-    private fun createIndexArray(): IntArray {
+    private fun createSurfaceIndexArray(offset: Int): List<Int> {
         val index = mutableListOf<Int>()
         val count = BEZIER_CURVE_STEPS_COUNT + 1
         for (i in 0 until BEZIER_CURVE_STEPS_COUNT) {
-            index.addAll(listOf(i, i + count, i + count + 1))
-            index.addAll(listOf(i, i + count + 1, i + 1))
+            index.addAll(listOf(i + 4, i + 4 + count, i + 4 + count + 1))
+            index.addAll(listOf(i + 4, i + 4 + count + 1, i + 4 + 1))
         }
+
+        index.addAll(
+            listOf(
+                0, 4, count + 4,
+                3, 4 + BEZIER_CURVE_STEPS_COUNT, 4 + count + BEZIER_CURVE_STEPS_COUNT,
+                3, 1, 4 + BEZIER_CURVE_STEPS_COUNT + count,
+                1, 2, 3
+            )
+        )
+        val result = index.map { it + offset }
+        return result
+    }
+
+    private fun createIndexArray(vertexSize: Int): IntArray {
+        val index = mutableListOf<Int>().apply {
+            val step = vertexSize / 2
+
+            addAll(createSurfaceIndexArray(0))
+            addAll(createSurfaceIndexArray(step))
+
+            for (i in 4 until BEZIER_CURVE_STEPS_COUNT + 4) {
+                addAll(addSurface(i, i + 1))
+            }
+
+            for (i in 4 + BEZIER_CURVE_STEPS_COUNT + 1 until 2 * BEZIER_CURVE_STEPS_COUNT + 4 + 1) {
+                addAll(addSurface(i, i + 1))
+            }
+            addAll(addSurface(4 + BEZIER_CURVE_STEPS_COUNT + 1, 4 + 2 * BEZIER_CURVE_STEPS_COUNT + 1))
+            addAll(addSurface(0, 4))
+            addAll(addSurface(0, 1))
+            addAll(addSurface(1, 2))
+            addAll(addSurface(2, 3))
+            addAll(addSurface(3, 4 + BEZIER_CURVE_STEPS_COUNT))
+        }
+
         return index.toIntArray()
+    }
+
+    private fun addSurface(start: Int, end: Int): List<Int> {
+        val step = vertex.size / COORDS_PER_VERTEX / 2
+        return mutableListOf<Int>().apply {
+            addAll(listOf(start, end, start + step))
+            addAll(listOf(end, start + step, end + step))
+        }
     }
 
     companion object {
