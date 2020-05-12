@@ -10,7 +10,7 @@ import java.nio.IntBuffer
 import java.util.Collections.addAll
 import kotlin.math.pow
 
-class BezierCurve {
+class CharacterP(private val koef: Float = 1f) {
     private val vertexShaderCode = "attribute vec3 aVertexPosition;" +
             "attribute vec4 aVertexColor;" +
             "uniform mat4 uMVPMatrix;" +
@@ -54,9 +54,9 @@ class BezierCurve {
     private val positionHandle: Int
     private val colorHandle: Int
     private val mVPMatrixHandle: Int
+    private val program = createProgram()
 
     init {
-        val program = createProgram()
         positionHandle = GLES32.glGetAttribLocation(program, "aVertexPosition")
         GLES32.glEnableVertexAttribArray(positionHandle)
         colorHandle = GLES32.glGetAttribLocation(program, "aVertexColor")
@@ -91,6 +91,7 @@ class BezierCurve {
     }
 
     fun draw(mvpMatrix: FloatArray) {
+        GLES32.glUseProgram(program)
         GLES32.glUniformMatrix4fv(mVPMatrixHandle, 1, false, mvpMatrix, 0)
         GLES32.glVertexAttribPointer(
             positionHandle,
@@ -120,7 +121,7 @@ class BezierCurve {
             addAll(createVertex(1f))
             addAll(createVertex(-1f))
         }
-        return vertex.toFloatArray()
+        return vertex.map { it*koef }.toFloatArray()
     }
 
     private fun createVertex(z: Float): List<Float> {
